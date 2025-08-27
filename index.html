@@ -61,6 +61,159 @@
   
 
  <script>
+    // BOTÃO DE DOAÇÃO - Adiciona automaticamente
+    document.addEventListener("DOMContentLoaded", () => {
+        // Cria os estilos CSS diretamente via JavaScript
+        const style = document.createElement('style');
+        style.textContent = `
+            .custom-donation-container {
+                position: fixed !important;
+                top: 20px !important;
+                right: 20px !important;
+                z-index: 99999 !important;
+                pointer-events: auto !important;
+            }
+            
+            .donation-btn {
+                background: linear-gradient(45deg, #ff6b35, #f7931e) !important;
+                color: white !important;
+                padding: 10px 18px !important;
+                border-radius: 30px !important;
+                text-decoration: none !important;
+                font-size: 14px !important;
+                font-weight: 700 !important;
+                transition: all 0.3s ease !important;
+                box-shadow: 0 4px 20px rgba(255, 107, 53, 0.5) !important;
+                border: none !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                cursor: pointer !important;
+                position: relative !important;
+                z-index: 100000 !important;
+                min-height: 40px !important;
+                white-space: nowrap !important;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif !important;
+            }
+            
+            .donation-btn:hover {
+                transform: translateY(-3px) scale(1.05) !important;
+                box-shadow: 0 8px 30px rgba(255, 107, 53, 0.7) !important;
+                color: white !important;
+                text-decoration: none !important;
+                background: linear-gradient(45deg, #ff7b45, #f8a31e) !important;
+            }
+            
+            .donation-btn:active {
+                transform: translateY(-1px) scale(1.02) !important;
+            }
+            
+            .donation-btn:visited {
+                color: white !important;
+            }
+            
+            .heart-icon {
+                font-size: 18px !important;
+                animation: heartbeat 2.5s infinite !important;
+                display: inline-block !important;
+                filter: drop-shadow(0 0 3px rgba(255,255,255,0.3)) !important;
+            }
+            
+            @keyframes heartbeat {
+                0%, 100% { transform: scale(1); }
+                25% { transform: scale(1.1); }
+                50% { transform: scale(1.2); }
+                75% { transform: scale(1.1); }
+            }
+            
+            /* Responsivo para mobile */
+            @media (max-width: 480px) {
+                .custom-donation-container {
+                    top: 15px !important;
+                    right: 15px !important;
+                }
+                
+                .donation-btn {
+                    padding: 8px 14px !important;
+                    font-size: 13px !important;
+                    min-height: 36px !important;
+                }
+                
+                .heart-icon {
+                    font-size: 16px !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Cria o botão de doação flutuante
+        function createFloatingDonationButton() {
+            // Verifica se o botão já existe
+            if (document.querySelector('.donation-btn')) {
+                return;
+            }
+
+            // Cria container fixo
+            const container = document.createElement('div');
+            container.className = 'custom-donation-container';
+            container.setAttribute('id', 'donation-container');
+            
+            // Cria o botão de doação
+            const donationBtn = document.createElement('a');
+            donationBtn.href = 'https://www.paypal.com/donate/?hosted_button_id=YQ8YYZEUH2VHC';
+            donationBtn.className = 'donation-btn';
+            donationBtn.target = '_blank';
+            donationBtn.rel = 'noopener noreferrer';
+            donationBtn.setAttribute('aria-label', 'Fazer doação via PayPal');
+            donationBtn.setAttribute('title', 'Apoie este projeto com uma doação');
+            
+            // Cria o ícone do coração
+            const heartIcon = document.createElement('span');
+            heartIcon.className = 'heart-icon';
+            heartIcon.textContent = '❤️';
+            
+            // Cria o texto do botão
+            const textSpan = document.createElement('span');
+            textSpan.textContent = 'Doar';
+            textSpan.style.fontWeight = '700';
+            
+            // Monta o botão
+            donationBtn.appendChild(heartIcon);
+            donationBtn.appendChild(textSpan);
+            
+            // Adiciona o botão ao container
+            container.appendChild(donationBtn);
+            
+            // Adiciona ao body
+            document.body.appendChild(container);
+            
+            // Adiciona eventos
+            donationBtn.addEventListener('click', (e) => {
+                // Efeito visual no clique
+                donationBtn.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    donationBtn.style.transform = '';
+                }, 150);
+            });
+            
+            // Animação de entrada
+            setTimeout(() => {
+                container.style.opacity = '0';
+                container.style.transform = 'translateY(-20px)';
+                container.style.transition = 'all 0.5s ease';
+                
+                setTimeout(() => {
+                    container.style.opacity = '1';
+                    container.style.transform = 'translateY(0)';
+                }, 100);
+            }, 500);
+        }
+        
+        // Cria o botão
+        createFloatingDonationButton();
+    });
+
+    // CÓDIGO ORIGINAL DO VERIFICADOR
     const carousel = document.getElementById("carousel");
     const cards = carousel.querySelectorAll(".card");
     let currentCardIndex = 0;
@@ -399,4 +552,3 @@ document.addEventListener('input', function(e) {
   </script>
 </body>
 </html>
-
