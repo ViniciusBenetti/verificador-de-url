@@ -300,71 +300,74 @@ async function performURLCheck(url) {
       url = 'https://' + url;
     }
 
-    // Fazer POST para sua API
-    const submitResponse = await fetch('https://vinixodin.com/api/verificarURL', {
+    // Fazer POST para a API
+    console.log('Enviando POST para:', 'https://vinixodin.com/verificarURL');
+    const submitResponse = await fetch('https://vinixodin.com/verificarURL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({
-        url: url
-      })
+      body: JSON.stringify({ url })
     });
 
+    console.log('POST Status:', submitResponse.status);
+    console.log('POST Cabeçalhos:', [...submitResponse.headers]);
     if (!submitResponse.ok) {
-      throw new Error('Erro ao submeter URL para análise');
+      throw new Error(`Erro ao submeter URL para análise: ${submitResponse.statusText}`);
     }
 
     const submitData = await submitResponse.json();
+    console.log('POST Resposta:', submitData);
 
     // Verificar se houve erro na submissão
     if (submitData.erro) {
-      throw new Error(submitData.mensagem || 'Erro na submissão');
+      throw new Error(submitData.mensagem || submitData.erro || 'Erro na submissão');
     }
 
     const apiUrl = submitData.api;
+    console.log('apiUrl:', apiUrl);
 
-    // Loop para verificar resultado (30 tentativas, 1 segundo cada)
+    // Loop para verificar resultado (12 tentativas, 5 segundos cada)
     for (let tentativa = 1; tentativa <= 30; tentativa++) {
       console.log(`Tentativa ${tentativa}/30 - Verificando resultado...`);
 
       try {
-        // Aguardar 1 segundo antes de cada tentativa
+        // Aguardar 5 segundos antes de cada tentativa
         await new Promise(resolve => setTimeout(resolve, 5000));
 
-         const resultResponse = await fetch("https://api.allorigins.win/raw?url="+apiUrl, {
+        // Requisição GET via proxy allorigins.win
+        const resultResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
             'Accept': 'application/json'
           }
         });
 
-        if (resultResponse.ok) {
-          const resultData = await resultResponse.json();
-
-          // Se o resultado estiver pronto, analisar
-          if (resultData && !resultData.message?.includes('not finished')) {
-            return analyzeResults(resultData);
-          }
+        console.log('GET Status:', resultResponse.status);
+        console.log('GET Cabeçalhos:', [...resultResponse.headers]);
+        if (!resultResponse.ok) {
+          throw new Error(`Erro na requisição GET: ${resultResponse.statusText}`);
         }
 
-        // Se não estiver pronto ainda, continuar o loop
-        console.log(`Tentativa ${tentativa}: Resultado ainda não disponível`);
+        const resultData = await resultResponse.json();
+        console.log('GET Resposta:', resultData);
 
+        // Se o resultado estiver pronto, analisar
+        if (resultData && !resultData.message?.includes('not finished')) {
+          return analyzeResults(resultData); // Substitua por sua função analyzeResults
+        }
+
+        console.log(`Tentativa ${tentativa}: Resultado ainda não disponível`);
       } catch (fetchError) {
-        console.log(`Tentativa ${tentativa}: Erro ao buscar resultado -, fetchError.message`);
+        console.error(`Tentativa ${tentativa}: Erro ao buscar resultado - ${fetchError.message}`);
         // Continuar tentando mesmo se houver erro individual
       }
     }
 
-    // Se passou de 30 tentativas sem sucesso
     throw new Error('Tempo limite excedido. A análise está demorando mais que o esperado.');
-
   } catch (error) {
     console.error('Erro na verificação:', error);
-
     return {
       message: `❌ ${error.message}`,
       status: 'error'
