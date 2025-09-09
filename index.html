@@ -293,7 +293,6 @@ function isValidURL(string) {
   }
 }
 
-// Verificação usando sua API backend
 async function performURLCheck(url) {
   try {
     // Adicionar https:// se não tiver protocolo
@@ -326,15 +325,15 @@ async function performURLCheck(url) {
 
     const apiUrl = submitData.api;
     
-    // Loop para verificar resultado (30 tentativas, 1 segundo cada)
+    // Loop para verificar resultado (12 tentativas, 5 segundos cada)
     for (let tentativa = 1; tentativa <= 12; tentativa++) {
       console.log(`Tentativa ${tentativa}/12 - Verificando resultado...`);
       
       try {
-        // Aguardar 1 segundo antes de cada tentativa
+        // Aguardar 5 segundos antes de cada tentativa
         await new Promise(resolve => setTimeout(resolve, 5000));
         
-         const resultResponse = await fetch("https://api.allorigins.win/raw?url="+apiUrl, {
+        const resultResponse = await fetch("https://api.allorigins.win/raw?url=" + apiUrl, {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
@@ -359,7 +358,7 @@ async function performURLCheck(url) {
       }
     }
     
-    // Se passou de 30 tentativas sem sucesso
+    // Se passou de 12 tentativas sem sucesso
     throw new Error('Tempo limite excedido. A análise está demorando mais que o esperado.');
 
   } catch (error) {
