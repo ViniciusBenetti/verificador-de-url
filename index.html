@@ -300,21 +300,31 @@ async function performURLCheck(url) {
       url = 'https://' + url;
     }
 
+    // Validar URL
+    try {
+      new URL(url);
+    } catch (e) {
+      throw new Error('URL inválida');
+    }
+
     // Fazer POST para a API
     console.log('Enviando POST para:', 'https://vinixodin.com/api/verificarURL');
     const submitResponse = await fetch('https://vinixodin.com/api/verificarURL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
       },
-      body: JSON.stringify({ url })
+      body: JSON.stringify({ url }),
+      // Adicionar timeout para evitar espera longa
+      signal: AbortSignal.timeout(10000), // Timeout de 10 segundos
     });
 
     console.log('POST Status:', submitResponse.status);
     console.log('POST Cabeçalhos:', [...submitResponse.headers]);
+
     if (!submitResponse.ok) {
-      throw new Error(`Erro ao submeter URL para análise: ${submitResponse.statusText}`);
+      throw new Error(`Erro ao submeter URL para análise: ${submitResponse.status} - ${submitResponse.statusText}`);
     }
 
     const submitData = await submitResponse.json();
@@ -326,9 +336,12 @@ async function performURLCheck(url) {
     }
 
     const apiUrl = submitData.api;
+    if (!apiUrl) {
+      throw new Error('URL da API não retornada na resposta');
+    }
     console.log('apiUrl:', apiUrl);
 
-    // Loop para verificar resultado (12 tentativas, 5 segundos cada)
+    // Loop para verificar resultado (30 tentativas, 5 segundos cada)
     for (let tentativa = 1; tentativa <= 30; tentativa++) {
       console.log(`Tentativa ${tentativa}/30 - Verificando resultado...`);
 
@@ -340,20 +353,22 @@ async function performURLCheck(url) {
         const resultResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json'
-          }
+            'Accept': 'application/json',
+          },
+          signal: AbortSignal.timeout(10000), // Timeout de 10 segundos
         });
 
         console.log('GET Status:', resultResponse.status);
         console.log('GET Cabeçalhos:', [...resultResponse.headers]);
+
         if (!resultResponse.ok) {
-          throw new Error(`Erro na requisição GET: ${resultResponse.statusText}`);
+          throw new Error(`Erro na requisição GET: ${resultResponse.status} - ${resultResponse.statusText}`);
         }
 
         const resultData = await resultResponse.json();
         console.log('GET Resposta:', resultData);
 
-        // Se o resultado estiver pronto, analisar
+        // Verificar se o resultado está pronto
         if (resultData && !resultData.message?.includes('not finished')) {
           return analyzeResults(resultData); // Substitua por sua função analyzeResults
         }
@@ -370,7 +385,7 @@ async function performURLCheck(url) {
     console.error('Erro na verificação:', error);
     return {
       message: `❌ ${error.message}`,
-      status: 'error'
+      status: 'error',
     };
   }
 }
