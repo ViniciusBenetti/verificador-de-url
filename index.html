@@ -293,79 +293,85 @@ function isValidURL(string) {
   }
 }
 
-async function performURLCheckDirect(url) {
+async function performURLCheck(url) {
   try {
     // Adicionar https:// se não tiver protocolo
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://' + url;
     }
 
-    console.log('Tentando método direto para URL:', url);
+    // Fazer POST para sua API
+    const submitResponse = await fetch('https://vinixodin.com/api/verificarURL', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        url: url
+      })
+    });
 
-    // Tentar fazer a requisição diretamente primeiro
-    try {
-      const directResponse = await fetch('https://vinixodin.com/api/verificarURL', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          url: url
-        })
-      });
-
-      if (directResponse.ok) {
-        const submitData = await directResponse.json();
-        console.log('Resposta direta bem-sucedida:', submitData);
-        
-        // Continue com o resto da lógica...
-        if (submitData.erro) {
-          throw new Error(submitData.mensagem || 'Erro na submissão');
-        }
-
-        const apiUrl = submitData.api;
-        
-        // Loop de verificação igual ao anterior...
-        for (let tentativa = 1; tentativa <= 12; tentativa++) {
-          console.log(`Tentativa ${tentativa}/12 - Verificando resultado...`);
-          
-          try {
-            if (tentativa > 1) {
-              await new Promise(resolve => setTimeout(resolve, 5000));
-            }
-            
-            const resultResponse = await fetch(apiUrl);
-            
-            if (resultResponse.ok) {
-              const resultData = await resultResponse.json();
-              
-              if (resultData && !resultData.message?.includes('not finished')) {
-                return analyzeResults(resultData);
-              }
-            }
-            
-          } catch (fetchError) {
-            console.log(`Tentativa ${tentativa}: Erro:`, fetchError.message);
-          }
-        }
-        
-        throw new Error('Tempo limite excedido.');
-      }
-    } catch (corsError) {
-      console.log('Método direto falhou (CORS esperado):', corsError.message);
-      throw new Error('CORS bloqueou a requisição. Use um proxy ou configure o backend.');
+    if (!submitResponse.ok) {
+      throw new Error('Erro ao submeter URL para análise');
     }
 
+    const submitData = await submitResponse.json();
+
+    // Verificar se houve erro na submissão
+    if (submitData.erro) {
+      throw new Error(submitData.mensagem || 'Erro na submissão');
+    }
+
+    const apiUrl = submitData.api;
+
+    // Loop para verificar resultado (30 tentativas, 1 segundo cada)
+    for (let tentativa = 1; tentativa <= 12; tentativa++) {
+      console.log(`Tentativa ${tentativa}/12 - Verificando resultado...`);
+
+      try {
+        // Aguardar 1 segundo antes de cada tentativa
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+         const resultResponse = await fetch("https://api.allorigins.win/raw?url="+apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (resultResponse.ok) {
+          const resultData = await resultResponse.json();
+
+          // Se o resultado estiver pronto, analisar
+          if (resultData && !resultData.message?.includes('not finished')) {
+            return analyzeResults(resultData);
+          }
+        }
+
+        // Se não estiver pronto ainda, continuar o loop
+        console.log(`Tentativa ${tentativa}: Resultado ainda não disponível`);
+
+      } catch (fetchError) {
+        console.log(`Tentativa ${tentativa}: Erro ao buscar resultado -, fetchError.message`);
+        // Continuar tentando mesmo se houver erro individual
+      }
+    }
+
+    // Se passou de 30 tentativas sem sucesso
+    throw new Error('Tempo limite excedido. A análise está demorando mais que o esperado.');
+
   } catch (error) {
-    console.error('Erro na verificação direta:', error);
-    
+    console.error('Erro na verificação:', error);
+
     return {
       message: `❌ ${error.message}`,
       status: 'error'
     };
   }
 }
+
+
 
 
 // Analisar os resultados do URLScan
