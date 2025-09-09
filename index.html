@@ -293,121 +293,72 @@ function isValidURL(string) {
   }
 }
 
-async function performURLCheck(url) {
+async function performURLCheckDirect(url) {
   try {
     // Adicionar https:// se não tiver protocolo
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://' + url;
     }
 
-    console.log('Iniciando verificação para URL:', url);
+    console.log('Tentando método direto para URL:', url);
 
-    // Fazer POST para sua API usando AllOrigins com método simplificado
-    const submitUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://vinixodin.com/api/verificarURL')}`;
-    
-    const submitResponse = await fetch(submitUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
+    // Tentar fazer a requisição diretamente primeiro
+    try {
+      const directResponse = await fetch('https://vinixodin.com/api/verificarURL', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          url: url
+        })
+      });
 
-    console.log('Status da resposta de submissão:', submitResponse.status);
-
-    if (!submitResponse.ok) {
-      throw new Error(`Erro HTTP: ${submitResponse.status}`);
-    }
-
-    const submitResult = await submitResponse.json();
-    console.log('Resposta completa:', submitResult);
-
-    // Tentar diferentes formas de acessar os dados
-    let submitData;
-    
-    if (submitResult.contents) {
-      try {
-        submitData = JSON.parse(submitResult.contents);
-      } catch (parseError) {
-        console.log('Erro ao fazer parse do contents:', parseError);
-        console.log('Contents raw:', submitResult.contents);
-        throw new Error('Resposta da API não está no formato JSON esperado');
-      }
-    } else {
-      submitData = submitResult;
-    }
-    
-    // Verificar se houve erro na submissão
-    if (submitData.erro) {
-      throw new Error(submitData.mensagem || 'Erro na submissão');
-    }
-
-    const apiUrl = submitData.api;
-    console.log('URL da API para monitoramento:', apiUrl);
-    
-    if (!apiUrl) {
-      throw new Error('API não retornou URL de monitoramento');
-    }
-    
-    // Loop para verificar resultado (12 tentativas, 5 segundos cada)
-    for (let tentativa = 1; tentativa <= 12; tentativa++) {
-      console.log(`Tentativa ${tentativa}/12 - Verificando resultado...`);
-      
-      try {
-        // Aguardar 5 segundos antes de cada tentativa (exceto na primeira)
-        if (tentativa > 1) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
-        }
+      if (directResponse.ok) {
+        const submitData = await directResponse.json();
+        console.log('Resposta direta bem-sucedida:', submitData);
         
-        const resultResponse = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
+        // Continue com o resto da lógica...
+        if (submitData.erro) {
+          throw new Error(submitData.mensagem || 'Erro na submissão');
+        }
 
-        console.log(`Tentativa ${tentativa} - Status:`, resultResponse.status);
-
-        if (resultResponse.ok) {
-          const resultWrapper = await resultResponse.json();
-          console.log(`Tentativa ${tentativa} - Resposta:`, resultWrapper);
+        const apiUrl = submitData.api;
+        
+        // Loop de verificação igual ao anterior...
+        for (let tentativa = 1; tentativa <= 12; tentativa++) {
+          console.log(`Tentativa ${tentativa}/12 - Verificando resultado...`);
           
-          if (resultWrapper.contents) {
-            try {
-              const resultData = JSON.parse(resultWrapper.contents);
+          try {
+            if (tentativa > 1) {
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+            
+            const resultResponse = await fetch(apiUrl);
+            
+            if (resultResponse.ok) {
+              const resultData = await resultResponse.json();
               
-              // Se o resultado estiver pronto, analisar
               if (resultData && !resultData.message?.includes('not finished')) {
-                console.log('Resultado final encontrado:', resultData);
                 return analyzeResults(resultData);
               }
-              
-              console.log(`Tentativa ${tentativa}: Análise ainda em progresso...`);
-            } catch (jsonError) {
-              console.log(`Tentativa ${tentativa}: Resposta não é JSON válido:`, resultWrapper.contents);
-              
-              // Se contém HTML ou texto indicando que ainda está processando
-              if (resultWrapper.contents.includes('not finished') || 
-                  resultWrapper.contents.includes('processing') ||
-                  resultWrapper.contents.includes('loading')) {
-                console.log(`Tentativa ${tentativa}: Ainda processando...`);
-                continue;
-              }
             }
+            
+          } catch (fetchError) {
+            console.log(`Tentativa ${tentativa}: Erro:`, fetchError.message);
           }
-        } else {
-          console.log(`Tentativa ${tentativa}: Erro HTTP ${resultResponse.status}`);
         }
         
-      } catch (fetchError) {
-        console.log(`Tentativa ${tentativa}: Erro ao buscar resultado:`, fetchError.message);
+        throw new Error('Tempo limite excedido.');
       }
+    } catch (corsError) {
+      console.log('Método direto falhou (CORS esperado):', corsError.message);
+      throw new Error('CORS bloqueou a requisição. Use um proxy ou configure o backend.');
     }
-    
-    // Se passou de 12 tentativas sem sucesso
-    throw new Error('Tempo limite excedido. A análise está demorando mais que o esperado.');
 
   } catch (error) {
-    console.error('Erro na verificação:', error);
+    console.error('Erro na verificação direta:', error);
     
     return {
       message: `❌ ${error.message}`,
