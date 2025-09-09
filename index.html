@@ -293,6 +293,7 @@ function isValidURL(string) {
   }
 }
 
+// SOLUÇÃO 1: Usando AllOrigins (mais confiável)
 async function performURLCheck(url) {
   try {
     // Adicionar https:// se não tiver protocolo
@@ -300,15 +301,23 @@ async function performURLCheck(url) {
       url = 'https://' + url;
     }
 
-    // Fazer POST para sua API
-    const submitResponse = await fetch('https://vinixodin.com/api/verificarURL', {
+    // Fazer POST para sua API usando AllOrigins
+    const submitResponse = await fetch('https://api.allorigins.win/get', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        url: url
+        url: 'https://vinixodin.com/api/verificarURL',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          url: url
+        })
       })
     });
 
@@ -316,7 +325,8 @@ async function performURLCheck(url) {
       throw new Error('Erro ao submeter URL para análise');
     }
 
-    const submitData = await submitResponse.json();
+    const submitResult = await submitResponse.json();
+    const submitData = JSON.parse(submitResult.contents);
     
     // Verificar se houve erro na submissão
     if (submitData.erro) {
@@ -333,7 +343,7 @@ async function performURLCheck(url) {
         // Aguardar 5 segundos antes de cada tentativa
         await new Promise(resolve => setTimeout(resolve, 5000));
         
-        const resultResponse = await fetch("https://api.allorigins.win/raw?url=" + apiUrl, {
+        const resultResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
