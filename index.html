@@ -294,19 +294,18 @@ function isValidURL(string) {
 }
 
 async function performURLCheck(url) {
- try {
+  try {
     // Adicionar https:// se não tiver protocolo
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://' + url;
     }
 
-    // Fazer POST para sua API usando CORS Anywhere
-    const submitResponse = await fetch('https://cors-anywhere.herokuapp.com/https://vinixodin.com/api/verificarURL', {
+    // Fazer POST para sua API
+    const submitResponse = await fetch('https://vinixodin.com/api/verificarURL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         url: url
@@ -318,61 +317,59 @@ async function performURLCheck(url) {
     }
 
     const submitData = await submitResponse.json();
-    
+
     // Verificar se houve erro na submissão
     if (submitData.erro) {
       throw new Error(submitData.mensagem || 'Erro na submissão');
     }
 
     const apiUrl = submitData.api;
-    
-    // Loop para verificar resultado (12 tentativas, 5 segundos cada)
+
+    // Loop para verificar resultado (30 tentativas, 1 segundo cada)
     for (let tentativa = 1; tentativa <= 30; tentativa++) {
       console.log(`Tentativa ${tentativa}/30 - Verificando resultado...`);
-      
+
       try {
-        // Aguardar 5 segundos antes de cada tentativa
+        // Aguardar 1 segundo antes de cada tentativa
         await new Promise(resolve => setTimeout(resolve, 5000));
-        
-        const resultResponse = await fetch(`https://cors-anywhere.herokuapp.com/${apiUrl}`, {
+
+         const resultResponse = await fetch("https://api.allorigins.win/raw?url="+apiUrl, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'Accept': 'application/json'
           }
         });
 
         if (resultResponse.ok) {
           const resultData = await resultResponse.json();
-          
+
           // Se o resultado estiver pronto, analisar
           if (resultData && !resultData.message?.includes('not finished')) {
             return analyzeResults(resultData);
           }
         }
-        
+
         // Se não estiver pronto ainda, continuar o loop
         console.log(`Tentativa ${tentativa}: Resultado ainda não disponível`);
-        
+
       } catch (fetchError) {
-        console.log(`Tentativa ${tentativa}: Erro ao buscar resultado -`, fetchError.message);
+        console.log(`Tentativa ${tentativa}: Erro ao buscar resultado -, fetchError.message`);
         // Continuar tentando mesmo se houver erro individual
       }
     }
-    
-    // Se passou de 12 tentativas sem sucesso
+
+    // Se passou de 30 tentativas sem sucesso
     throw new Error('Tempo limite excedido. A análise está demorando mais que o esperado.');
 
   } catch (error) {
     console.error('Erro na verificação:', error);
-    
+
     return {
       message: `❌ ${error.message}`,
       status: 'error'
     };
   }
 }
-
 
 
 
