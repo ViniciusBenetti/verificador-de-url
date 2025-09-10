@@ -353,7 +353,7 @@ async function performURLCheck(url) {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Pragma': 'No-cache'
+            'Cache-control': 'No-cache'
            
           },
           signal: AbortSignal.timeout(10000) // Timeout de 10 segundos
