@@ -351,7 +351,7 @@ async function performURLCheck(url) {
         const resultResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
           method: 'GET',
           headers: {
-             'Content-Type': 'application/json',
+            'Content-Type': 'application/json',
             'Accept': 'application/json'
            
           },
@@ -364,7 +364,7 @@ async function performURLCheck(url) {
           throw new Error(`Erro na requisição GET: ${resultResponse.status} - ${resultResponse.statusText}`);
         }
 
-        const resultData = await resultResponse.json();
+        var resultData = await resultResponse.json();
         console.log('GET Resposta:', resultData);
 
         // Verificar se o resultado está pronto
