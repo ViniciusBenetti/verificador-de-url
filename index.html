@@ -341,8 +341,8 @@ async function performURLCheck(url) {
     console.log('apiUrl:', apiUrl);
 
     // Loop para verificar resultado (12 tentativas, 5 segundos cada)
-    for (let tentativa = 1; tentativa <= 12; tentativa++) {
-      console.log(`Tentativa ${tentativa}/12 - Verificando resultado para apiUrl:`, apiUrl);
+    for (let tentativa = 1; tentativa <= 24; tentativa++) {
+      console.log(`Tentativa ${tentativa}/24 - Verificando resultado para apiUrl:`, apiUrl);
 
       try {
         // Aguardar 5 segundos antes de cada tentativa
