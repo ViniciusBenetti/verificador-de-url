@@ -354,8 +354,7 @@ async function performURLCheck(url) {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
-          },
-          signal: AbortSignal.timeout(30000)
+          }
         });
 
         console.log('GET Status:', resultResponse.status);
