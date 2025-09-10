@@ -353,7 +353,7 @@ async function performURLCheck(url) {
         const resultResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json',
+            'Accept': 'application/json'
           },
           signal: AbortSignal.timeout(10000), // Timeout de 10 segundos
         });
