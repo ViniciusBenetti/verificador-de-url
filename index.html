@@ -307,8 +307,9 @@ async function performURLCheck(url) {
       throw new Error('URL inválida');
     }
 
-    // Fazer POST para a API com no-cache
-    console.log('Enviando POST para:', 'https://vinixodin.com/api/verificarURL', 'URL:', url);
+    // Fazer POST para a API
+    console.log('Nova chamada de performURLCheck com URL:', url);
+    console.log('Enviando POST para:', 'https://vinixodin.com/api/verificarURL');
     const submitResponse = await fetch('https://vinixodin.com/api/verificarURL', {
       method: 'POST',
       headers: {
@@ -316,7 +317,7 @@ async function performURLCheck(url) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({ url }),
-      signal: AbortSignal.timeout(10000) // Timeout de 10 segundos
+      signal: AbortSignal.timeout(10000)
     });
 
     console.log('POST Status:', submitResponse.status);
@@ -340,32 +341,30 @@ async function performURLCheck(url) {
     console.log('apiUrl:', apiUrl);
 
     // Loop para verificar resultado (12 tentativas, 5 segundos cada)
-    for (let tentativa = 1; tentativa <= 30; tentativa++) {
-      console.log(`Tentativa ${tentativa}/30 - Verificando resultado para apiUrl:`, apiUrl);
+    for (let tentativa = 1; tentativa <= 12; tentativa++) {
+      console.log(`Tentativa ${tentativa}/12 - Verificando resultado para apiUrl:`, apiUrl);
 
       try {
         // Aguardar 5 segundos antes de cada tentativa
         await new Promise(resolve => setTimeout(resolve, 5000));
 
-        // Requisição GET via proxy allorigins.win com no-cache
-        const resultResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
+        // Requisição GET via proxy allorigins.win com cacheBuster
+        const cacheBuster = Date.now();
+        const resultResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}&cacheBuster=${cacheBuster}`, {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Cache-control': 'No-cache'
-           
+            'Accept': 'application/json'
           },
-          signal: AbortSignal.timeout(10000) // Timeout de 10 segundos
+          signal: AbortSignal.timeout(10000)
         });
 
         console.log('GET Status:', resultResponse.status);
-        console.log('GET Cabeçalhos:', [...resultResponse.headers]);
+        console.log('GET Cabeçalhos:', [...submitResponse.headers]);
         if (!resultResponse.ok) {
           throw new Error(`Erro na requisição GET: ${resultResponse.status} - ${resultResponse.statusText}`);
         }
 
-        var resultData = await resultResponse.json();
+        const resultData = await resultResponse.json();
         console.log('GET Resposta:', resultData);
 
         // Verificar se o resultado está pronto
