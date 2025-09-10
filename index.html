@@ -351,6 +351,7 @@ async function performURLCheck(url) {
         const resultResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
           method: 'GET',
           headers: {
+             'Content-Type': 'application/json',
             'Accept': 'application/json'
            
           },
