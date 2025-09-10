@@ -307,22 +307,22 @@ async function performURLCheck(url) {
       throw new Error('URL inválida');
     }
 
-    // Fazer POST para a API
-    console.log('Enviando POST para:', 'https://vinixodin.com/api/verificarURL');
+    // Fazer POST para a API com no-cache
+    console.log('Enviando POST para:', 'https://vinixodin.com/api/verificarURL', 'URL:', url);
     const submitResponse = await fetch('https://vinixodin.com/api/verificarURL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache', // Evitar cache
+        'Pragma': 'no-cache' // Compatibilidade com navegadores antigos
       },
       body: JSON.stringify({ url }),
-      // Adicionar timeout para evitar espera longa
-      signal: AbortSignal.timeout(10000), // Timeout de 10 segundos
+      signal: AbortSignal.timeout(10000) // Timeout de 10 segundos
     });
 
     console.log('POST Status:', submitResponse.status);
     console.log('POST Cabeçalhos:', [...submitResponse.headers]);
-
     if (!submitResponse.ok) {
       throw new Error(`Erro ao submeter URL para análise: ${submitResponse.status} - ${submitResponse.statusText}`);
     }
@@ -341,26 +341,27 @@ async function performURLCheck(url) {
     }
     console.log('apiUrl:', apiUrl);
 
-    // Loop para verificar resultado (30 tentativas, 5 segundos cada)
-    for (let tentativa = 1; tentativa <= 30; tentativa++) {
-      console.log(`Tentativa ${tentativa}/30 - Verificando resultado...`);
+    // Loop para verificar resultado (12 tentativas, 5 segundos cada)
+    for (let tentativa = 1; tentativa <= 12; tentativa++) {
+      console.log(`Tentativa ${tentativa}/12 - Verificando resultado para apiUrl:`, apiUrl);
 
       try {
         // Aguardar 5 segundos antes de cada tentativa
         await new Promise(resolve => setTimeout(resolve, 5000));
 
-        // Requisição GET via proxy allorigins.win
+        // Requisição GET via proxy allorigins.win com no-cache
         const resultResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache', // Evitar cache
+            'Pragma': 'no-cache' // Compatibilidade com navegadores antigos
           },
-          signal: AbortSignal.timeout(10000), // Timeout de 10 segundos
+          signal: AbortSignal.timeout(10000) // Timeout de 10 segundos
         });
 
         console.log('GET Status:', resultResponse.status);
         console.log('GET Cabeçalhos:', [...resultResponse.headers]);
-
         if (!resultResponse.ok) {
           throw new Error(`Erro na requisição GET: ${resultResponse.status} - ${resultResponse.statusText}`);
         }
@@ -385,11 +386,10 @@ async function performURLCheck(url) {
     console.error('Erro na verificação:', error);
     return {
       message: `❌ ${error.message}`,
-      status: 'error',
+      status: 'error'
     };
   }
 }
-
 
 
 
